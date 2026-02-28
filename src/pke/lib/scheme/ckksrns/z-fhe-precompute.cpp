@@ -248,7 +248,7 @@ void FHEZImpl::EvalBootstrapSetup(const CryptoContextImpl<DCRTPoly>& cc, uint32_
             // Input x is in {0, 1, ..., p-1}
             // Extract the negated MSB
             // Because we work in (-1, 0] after Flatten
-            if (x <= p / 2 && x != 0) {
+            if (x <= static_cast<int64_t>(p) / 2 && x != 0) {
                 return 1;
             }
             else {

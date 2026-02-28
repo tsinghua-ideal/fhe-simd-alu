@@ -249,7 +249,7 @@ void SimpleBootstrapExample(int zN, std::string directive) {
     // ArithToBooleanBatched
     if (1) {
         std::vector<Ciphertext<DCRTPoly>> batchCts = {ct, ct2};
-        auto batchSize                             = zN / 4;  // zN / w
+        size_t batchSize                             = zN / 4;  // zN / w
         while (batchCts.size() < batchSize) {
             batchCts.push_back(ct);
         }

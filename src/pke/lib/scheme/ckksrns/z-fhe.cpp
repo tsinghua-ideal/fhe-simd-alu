@@ -320,7 +320,7 @@ Ciphertext<DCRTPoly> FHEZImpl::EvalArithToArithHigh(ConstCiphertext<DCRTPoly>& c
 
 void FHEZImpl::ApplyDoubleAngleIterations(Ciphertext<DCRTPoly>& ct, uint32_t numIter) const {
     auto cc = ct->GetCryptoContext();
-    for (int32_t i = 0; i != numIter; ++i) {
+    for (uint32_t i = 0; i != numIter; ++i) {
         ct = z->EvalMult(ct, ct);
         z->ModReduceInPlace(ct);
         z->EvalAddInPlace(ct, z->EvalAddInC(ct, r_sparse_scalars[i]));

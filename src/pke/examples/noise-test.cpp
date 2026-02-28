@@ -159,7 +159,7 @@ void NoiseTestExample(int zN, std::string directive) {
         // vec2 is 32bit
         auto pt = BigInteger(vec2[0]);
         if (zN > 32) {
-            for (size_t i = 1; i < zN / 32; i++) {
+            for (int i = 1; i < zN / 32; i++) {
                 pt = (pt << 32) + (BigInteger(vec2[0]));
             }
         }
