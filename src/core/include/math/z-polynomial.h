@@ -150,6 +150,11 @@ public:
         }
         return result;
     }
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(m_encodingType, m_zN, m_zSlots, m_rN, m_cSlots);
+    }
 };
 
 struct RPolynomial;

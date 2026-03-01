@@ -77,6 +77,9 @@ static std::shared_ptr<std::vector<DCRTPoly>> EncryptZeroCore(const PublicKey<DC
 }
 
 Ciphertext<DCRTPoly> PKEZImpl::Encrypt(ZEncoding ptxt) {
+    if (!pk) {
+        OPENFHE_THROW("Public key is not set for encryption");
+    }
     auto zEncDCRTPoly = ptxt->GetElement<DCRTPoly>();
 
     auto ba = EncryptZeroCore(pk);
@@ -100,6 +103,9 @@ CiphertextGroup PKEZImpl::Encrypt(std::vector<ZEncoding> ptxts) {
 }
 
 ZDecryptResult PKEZImpl::Decrypt(CiphertextGroup cts) {
+    if (!sk) {
+        OPENFHE_THROW("Secret key is not set for decryption");
+    }
     auto ct            = cts[0];
     auto b             = DecryptCore(ct->GetElements(), sk);
     auto sfBigFP       = ct->GetScalingFactorBFP();

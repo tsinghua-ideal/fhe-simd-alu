@@ -65,6 +65,8 @@ private:
 
 class PKEZImpl {
 public:
+    PKEZImpl(PublicKey<DCRTPoly> pk) : pk(pk) {};
+    PKEZImpl(PrivateKey<DCRTPoly> sk) : sk(sk) {};
     PKEZImpl(PublicKey<DCRTPoly> pk, PrivateKey<DCRTPoly> sk) : pk(pk), sk(sk) {};
 
     void debug(Ciphertext<DCRTPoly> ct, std::string msg);

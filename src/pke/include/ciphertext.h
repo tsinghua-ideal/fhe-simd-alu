@@ -493,6 +493,9 @@ public:
         ar(cereal::make_nvp("si", m_scalingFactorInt));
         ar(cereal::make_nvp("e", m_encodingType));
         ar(cereal::make_nvp("m", m_metadataMap));
+        // Custom
+        ar(cereal::make_nvp("sbfp", m_scalingFactorBFP));
+        ar(cereal::make_nvp("zenc", m_zEncodingParams));
     }
 
     template <class Archive>
@@ -510,6 +513,9 @@ public:
         ar(cereal::make_nvp("si", m_scalingFactorInt));
         ar(cereal::make_nvp("e", m_encodingType));
         ar(cereal::make_nvp("m", m_metadataMap));
+        // Custom
+        ar(cereal::make_nvp("sbfp", m_scalingFactorBFP));
+        ar(cereal::make_nvp("zenc", m_zEncodingParams));
     }
 
     std::string SerializedObjectName() const {

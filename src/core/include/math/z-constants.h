@@ -535,11 +535,17 @@ public:
     static BigCVector MultZU(uint32_t zN, const BigFPVector& input);
     static BigFPVector MultZUInverse(uint32_t zN, const BigCVector& input);
 
+    static const std::vector<std::vector<std::complex<double>>>& GetZULowPrec(uint32_t zN);
+    static const std::vector<std::vector<std::complex<double>>>& GetZUInverseLowPrec(uint32_t zN);
+
 private:
     struct PrecomputedValues {
         uint32_t m_zN;
         BigCMatrix m_ZU;
         BigCMatrix m_ZUInv;
+
+        std::vector<std::vector<std::complex<double>>> m_ZU_lowprec;
+        std::vector<std::vector<std::complex<double>>> m_ZUInv_lowprec;
         PrecomputedValues(uint32_t zN);
 
         static BigCMatrix GetZU(uint32_t zN);

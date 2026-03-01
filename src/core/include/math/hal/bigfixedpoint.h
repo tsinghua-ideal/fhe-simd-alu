@@ -382,6 +382,11 @@ public:
         return *this;
     }
 
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(value), CEREAL_NVP(log2Scale), CEREAL_NVP(neg));
+    }
+
 private:
     BigInteger value;  // unsigned big
     int log2Scale;     // scale = 2^log2Scale
