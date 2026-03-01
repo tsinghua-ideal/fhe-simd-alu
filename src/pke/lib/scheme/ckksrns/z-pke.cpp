@@ -102,6 +102,28 @@ CiphertextGroup PKEZImpl::Encrypt(std::vector<ZEncoding> ptxts) {
     return CiphertextGroup(ctxts);
 }
 
+std::vector<uint64_t> PKEZImpl::DecryptSmallFast(CiphertextGroup cts) {
+    if (!sk) {
+        OPENFHE_THROW("Secret key is not set for decryption");
+    }
+    auto ct            = cts[0];
+    auto b             = DecryptCore(ct->GetElements(), sk);
+    auto sfBigFP       = ct->GetScalingFactorBFP();
+    auto zEncodeParams = ct->GetZEncodingParams();
+    auto sfBFP         = ct->GetScalingFactorBFP();
+    auto zEncode       = std::make_shared<ZEncodingImpl>(b.GetParams(), b, sfBigFP, zEncodeParams);
+
+    if (zEncodeParams.isZMode()) {
+        return ZEncodingImpl::decodeArithSmall(zEncode);
+    }
+    else if (zEncodeParams.isBModeFull()) {
+        OPENFHE_THROW("Unknown encoding mode");
+    }
+    else {
+        OPENFHE_THROW("Unknown encoding mode");
+    }
+}
+
 ZDecryptResult PKEZImpl::Decrypt(CiphertextGroup cts) {
     if (!sk) {
         OPENFHE_THROW("Secret key is not set for decryption");

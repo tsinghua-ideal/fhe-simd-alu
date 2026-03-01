@@ -217,4 +217,72 @@ ZEncoding ZEncodingImpl::encodeArith(std::vector<uint64_t> input, uint32_t zN, u
     return std::make_shared<ZEncodingImpl>(elementParams, poly, scalingFactor, params);
 }
 
+std::vector<uint64_t> ZEncodingImpl::decodeArithSmall(ZEncoding input) {
+    auto dcrtPoly      = input->GetElement<DCRTPoly>();
+    auto outputSize    = input->GetLength();
+    auto scalingFactor = input->GetScalingFactorBFP().convertToDouble();
+    dcrtPoly.SetFormat(Format::COEFFICIENT);
+    auto bigPoly = dcrtPoly.CRTInterpolate();
+    std::vector<double> coefficients;
+    auto ringDim = dcrtPoly.GetParams()->GetRingDimension();
+    auto q       = dcrtPoly.GetParams()->GetModulus();
+    for (size_t i = 0; i != outputSize; ++i) {
+        auto valInteger = bigPoly[i * (ringDim / outputSize)];
+        bool neg        = false;
+        if (valInteger > q.DividedBy(2)) {
+            neg        = true;
+            valInteger = q - valInteger;
+        }
+        coefficients.push_back((neg ? -1 : 1) * valInteger.ConvertToDouble() / scalingFactor);
+    }
+
+    auto m      = coefficients.size() * 2;
+    auto cSlots = coefficients.size() / 2;
+    std::vector<std::complex<double>> forwardDouble(cSlots);
+    for (size_t i = 0; i != cSlots; ++i) {
+        forwardDouble[i] = std::complex<double>(coefficients[i], coefficients[i + cSlots]);
+    }
+    DiscreteFourierTransform::FFTSpecial(forwardDouble, m);
+
+    auto zSlots = input->GetZEncodingParams().getZSlots();
+    auto zN     = input->GetZEncodingParams().getZN();
+    std::vector<uint64_t> outputs(zSlots);
+    for (size_t i = 0; i != zSlots; ++i) {
+        std::vector<std::complex<double>> zSlotCoeff(zN / 2);
+        for (size_t j = 0; j != zN / 2; ++j) {
+            zSlotCoeff[j] = forwardDouble[i * (zN / 2) + j];
+        }
+        auto zPoly = ZLinearTransform::MultZUInverseLowPrec(zN, zSlotCoeff);
+
+        // Multiply by X-2
+        std::vector<double> zPolyX2(zN);
+        zPolyX2[0] = -2 * zPoly[0];
+        for (size_t j = 1; j != zN; ++j) {
+            zPolyX2[j] = zPoly[j - 1] - 2 * zPoly[j];
+        }
+        // Now modulo by X^n-X+2
+        zPolyX2[0] += -2 * zPoly[zN - 1];
+        zPolyX2[1] += zPoly[zN - 1];
+
+        // Now round each coefficient
+        std::vector<int64_t> roundedCoeffs(zN);
+        for (size_t j = 0; j != zN; ++j) {
+            roundedCoeffs[j] = static_cast<int64_t>(std::round(zPolyX2[j]));
+        }
+
+        if (zN != 64) {
+            OPENFHE_THROW("Currently only supports zN=64 for decodeArithSmall");
+        }
+
+        int64_t res = 0;
+        for (int j = zN - 1; j >= 0; --j) {
+            res <<= 1;
+            res += roundedCoeffs[j];
+        }
+        // Now, cast int64_t to uint64_t, which is the final output
+        outputs[i] = res;
+    }
+    return outputs;
+}
+
 }  // namespace lbcrypto

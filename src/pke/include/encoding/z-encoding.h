@@ -76,6 +76,8 @@ public:
         return RPolynomial(input->GetZEncodingParams(), output);
     }
 
+    static std::vector<uint64_t> decodeArithSmall(ZEncoding input);
+
     static ZEncoding encodeC(const BigComplex& input, const std::shared_ptr<typename DCRTPoly::Params>& elementParams,
                              const BigFixedPoint& scalingFactor);
 

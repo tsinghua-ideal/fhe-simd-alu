@@ -73,6 +73,8 @@ public:
 
     ZDecryptResult Decrypt(CiphertextGroup ct);
 
+    std::vector<uint64_t> DecryptSmallFast(CiphertextGroup ct);
+
     Ciphertext<DCRTPoly> Encrypt(ZEncoding ptxt);
     CiphertextGroup Encrypt(std::vector<ZEncoding> ptxts);
 

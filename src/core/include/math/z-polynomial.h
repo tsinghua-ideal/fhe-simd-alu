@@ -309,8 +309,22 @@ public:
         return roundNOneToZero(input);
     }
 
+    static ZPolynomial multiplyByT(ZPolynomial input) {
+        std::vector<BigFixedPoint> result(input.getZN(), BigFixedPoint::zero());
+        auto two = BigFixedPoint::two();
+        for (size_t i = 0; i != input.getZN(); ++i) {
+            result[i] += -two * input[i];
+            if (i >= 1) {
+                result[i] += input[i - 1];
+            }
+        }
+        result[0] += -two * input[input.getZN() - 1];
+        result[1] += input[input.getZN() - 1];
+        return ZPolynomial(result);
+    }
+
     static BigInteger decode(ZPolynomial input) {
-        auto poly = multiplyRaw(input, getT(input.getZN()));
+        auto poly = multiplyByT(input);
 
         // For each coefficient, do rounding
         std::vector<BigFixedPoint> result = poly.getCoefficients();
