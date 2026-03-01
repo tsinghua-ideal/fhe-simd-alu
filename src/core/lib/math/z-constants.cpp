@@ -189,6 +189,41 @@ BigFPVector ZLinearTransform::MultZUInverse(uint32_t zN, const BigCVector& input
     return result;
 }
 
+std::vector<std::complex<double>> ZLinearTransform::MultZULowPrec(uint32_t zN, const std::vector<double>& input) {
+    auto& U = GetZULowPrec(zN);
+    assert(input.size() == U[0].size() && "Input size does not match expected size for U");
+
+    // This is the vandermond matrix
+    std::vector<std::complex<double>> result;
+
+    size_t halfSize = input.size() / 2;
+    for (size_t i = 0; i < halfSize; ++i) {
+        std::complex<double> sum(0.0, 0.0);
+        for (size_t j = 0; j < input.size(); ++j) {
+            sum += U[i][j] * input[j];
+        }
+        result.push_back(sum);
+    }
+    return result;
+}
+
+std::vector<double> ZLinearTransform::MultZUInverseLowPrec(uint32_t zN,
+                                                           const std::vector<std::complex<double>>& input) {
+    auto& UInv = GetZUInverseLowPrec(zN);
+    std::vector<double> result;
+    assert(input.size() == UInv[0].size() && "Input size does not match expected size for multiplyByZUInverse");
+
+    for (size_t i = 0; i != zN; ++i) {
+        std::complex<double> sum(0.0, 0.0);
+        for (size_t j = 0; j != zN / 2; ++j) {
+            sum += UInv[i][j] * input[j];
+        }
+        // z + conj(z) = 2*real(z)
+        result.push_back(2.0 * sum.real());
+    }
+    return result;
+}
+
 #endif
 
 }  // namespace lbcrypto

@@ -91,7 +91,7 @@ public:
             input.resize(zSlots, ZPolynomial::encodeZeros(zN));
         }
         std::vector<BigComplex> mergedSlots(zSlots * (zN / 2));
-#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(zSlots))
+        //#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(zSlots))
         for (size_t i = 0; i != zSlots; ++i) {
             auto singleCSlots = input[i].toCSlots();
             for (size_t j = 0; j != zN / 2; ++j) {
@@ -103,6 +103,11 @@ public:
         return encodeC(mergedCSlots, elementParams, scalingFactor);
     }
 
+    static ZEncoding encodeArith(std::vector<uint64_t> input, uint32_t zN, uint32_t zSlots,
+                                 const std::shared_ptr<typename DCRTPoly::Params>& elementParams,
+                                 const BigFixedPoint& scalingFactor);
+
+    // This is too slow
     static ZEncoding encodeArith(std::vector<BigInteger> input, uint32_t zN, uint32_t zSlots,
                                  const std::shared_ptr<typename DCRTPoly::Params>& elementParams,
                                  const BigFixedPoint& scalingFactor) {
@@ -115,6 +120,7 @@ public:
         }
         return encodeZ(zPolys, zN, zSlots, elementParams, scalingFactor);
     }
+    //
 
     static ZEncoding encodeArithSingle(BigInteger input, uint32_t zN,
                                        const std::shared_ptr<typename DCRTPoly::Params>& elementParams,

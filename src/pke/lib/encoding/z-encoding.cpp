@@ -1,4 +1,6 @@
 #include "encoding/z-encoding.h"
+#include "math/dftransform.h"
+#include "math/z-constants.h"
 
 namespace lbcrypto {
 
@@ -63,7 +65,7 @@ ZEncoding ZEncodingImpl::encodeR(const RPolynomial& input,
         }
     }
 
-    DCRTPoly::PolyLargeType polyLarge(std::make_shared<ILParamsImpl<DCRTPoly::Integer> >(2 * N, q, 1));
+    DCRTPoly::PolyLargeType polyLarge(std::make_shared<ILParamsImpl<DCRTPoly::Integer>>(2 * N, q, 1));
     polyLarge.SetValues(std::move(V), Format::COEFFICIENT);
 
     DCRTPoly poly(polyLarge, elementParams);
@@ -154,6 +156,65 @@ ZEncoding ZEncodingImpl::encodeC(const BigComplex& input,
         ZEncodingParams params(CMode, 2);
         return std::make_shared<ZEncodingImpl>(elementParams, poly, scalingFactor, params);
         */
+}
+
+// This is encoding shortcut as the encoding in z-polynomial is reallllly slow
+
+ZEncoding ZEncodingImpl::encodeArith(std::vector<uint64_t> input, uint32_t zN, uint32_t zSlots,
+                                     const std::shared_ptr<typename DCRTPoly::Params>& elementParams,
+                                     const BigFixedPoint& scalingFactor) {
+    std::vector<std::complex<double>> totalCSlots(zSlots * zN / 2);
+    for (size_t i = 0; i != input.size(); ++i) {
+        std::vector<double> coeffs(zN, 0.0);
+        for (size_t j = 0; j != zN; ++j) {
+            auto low  = input[i] & ((1ULL << (j + 1)) - 1);
+            coeffs[j] = -static_cast<double>(low) / std::exp2(static_cast<double>(j + 1));
+        }
+        coeffs[0] += static_cast<double>(input[i]) / std::exp2(static_cast<double>(zN));
+        auto cSlots = ZLinearTransform::MultZULowPrec(zN, coeffs);
+        for (size_t j = 0; j != zN / 2; ++j) {
+            totalCSlots[i * (zN / 2) + j] = cSlots[j];
+        }
+    }
+
+    auto m = totalCSlots.size() * 4;
+    DiscreteFourierTransform::FFTSpecialInv(totalCSlots, m);
+
+    std::vector<double> rValues(2 * totalCSlots.size());
+    for (size_t i = 0; i != totalCSlots.size(); ++i) {
+        rValues[i]                      = totalCSlots[i].real();
+        rValues[i + totalCSlots.size()] = totalCSlots[i].imag();
+    }
+
+    auto N = elementParams->GetRingDimension();
+    auto n = rValues.size();
+    std::vector<int64_t> roundedCoeffs;
+    roundedCoeffs.reserve(n);
+    auto sfDouble = scalingFactor.convertToDouble();
+    for (size_t i = 0; i < n; ++i) {
+        roundedCoeffs.push_back(static_cast<int64_t>(round(rValues[i] * sfDouble)));
+    }
+    DCRTPoly poly(elementParams, Format::COEFFICIENT, true);
+
+    auto& mVectors = poly.GetAllElements();
+    auto t         = poly.GetNumOfElements();
+#pragma omp parallel for num_threads(OpenFHEParallelControls.GetThreadLimit(t))
+    for (size_t i = 0; i < t; ++i) {
+        auto& singlePoly = mVectors[i];
+        auto qi          = mVectors[i].GetModulus();
+        int64_t qiInt    = qi.template ConvertToInt<int64_t>();
+        for (size_t j = 0; j < n; ++j) {
+            auto signedRem = roundedCoeffs[j] % qiInt;
+            if (signedRem < 0) {
+                signedRem += qiInt;
+            }
+            singlePoly[j * N / n] = static_cast<uint64_t>(signedRem);
+        }
+    }
+    poly.SetFormat(Format::EVALUATION);
+
+    ZEncodingParams params(ZMode, zN, zSlots);
+    return std::make_shared<ZEncodingImpl>(elementParams, poly, scalingFactor, params);
 }
 
 }  // namespace lbcrypto

@@ -538,6 +538,9 @@ public:
     static const std::vector<std::vector<std::complex<double>>>& GetZULowPrec(uint32_t zN);
     static const std::vector<std::vector<std::complex<double>>>& GetZUInverseLowPrec(uint32_t zN);
 
+    static std::vector<std::complex<double>> MultZULowPrec(uint32_t zN, const std::vector<double>& input);
+    static std::vector<double> MultZUInverseLowPrec(uint32_t zN, const std::vector<std::complex<double>>& input);
+
 private:
     struct PrecomputedValues {
         uint32_t m_zN;
